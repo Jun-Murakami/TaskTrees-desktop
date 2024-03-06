@@ -232,7 +232,7 @@ export function HomePage() {
               ©{new Date().getFullYear()} Jun Murakami
             </a>{' '}
             |{' '}
-            <a href='https://github.com/Jun-Murakami/TaskTrees' target='_blank' rel='noreferrer'>
+            <a href='https://github.com/Jun-Murakami/TaskTrees-desktop' target='_blank' rel='noreferrer'>
               GitHub
             </a>{' '}
             | <a href='/privacy-policy'>Privacy policy</a>

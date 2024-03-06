@@ -34,35 +34,36 @@ fn main() {
                   }
               }
           }
-            let window = app_handle.get_window("main").unwrap();
-            let path_clone = path.clone();
-            let window_clone = window.clone();
-            window.on_window_event(move |event| match event {
-                WindowEvent::CloseRequested { api, .. } => {
-                      api.prevent_close();
-                      let is_maximized = window_clone.is_maximized().unwrap();
-                      window_clone.unmaximize().unwrap();
-                      let size = window_clone.outer_size().unwrap();
-                      let position = window_clone.outer_position().unwrap();
+          let window = app_handle.get_window("main").unwrap();
+          let path_clone = path.clone();
+          let window_clone = window.clone();
+          window.on_window_event(move |event| match event {
+              WindowEvent::CloseRequested { api, .. } => {
+                    api.prevent_close();
+                    let is_maximized = window_clone.is_maximized().unwrap();
+                    window_clone.unmaximize().unwrap();
+                    let size = window_clone.outer_size().unwrap();
+                    let position = window_clone.outer_position().unwrap();
 
-                      let window_state = json!({
-                          "width": size.width,
-                          "height": size.height,
-                          "x": position.x,
-                          "y": position.y,
-                          "is_maximized": is_maximized,
-                      });
+                    let window_state = json!({
+                        "width": size.width,
+                        "height": size.height,
+                        "x": position.x,
+                        "y": position.y,
+                        "is_maximized": is_maximized,
+                    });
 
-                      if let Err(e) = std::fs::write(&path_clone, serde_json::to_string(&window_state).unwrap()) {
-                          println!("Error saving window state: {:?}", e);
-                      }
-                      app_handle.exit(0); 
-                  },
-                  _ => {}
-              });
+                    if let Err(e) = std::fs::write(&path_clone, serde_json::to_string(&window_state).unwrap()) {
+                        println!("Error saving window state: {:?}", e);
+                    }
+                    app_handle.exit(0); 
+                },
+                _ => {}
+            });
           
           Ok(())
         })
+        .plugin(tauri_plugin_oauth::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
