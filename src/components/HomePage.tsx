@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+import { getVersion } from '@tauri-apps/api/app';
 import { useAppStateSync } from '../hooks/useAppStateSync';
 import { useTreeManagement } from '../hooks/useTreeManagement';
 import { useAuth } from '../hooks/useAuth';
@@ -14,6 +16,11 @@ import { useAppStateStore } from '../store/appStateStore';
 import { useTreeStateStore } from '../store/treeStateStore';
 
 export function HomePage() {
+  const [currentVersion, setCurrentVersion] = useState('');
+  const [latestVersion, setLatestVersion] = useState('');
+  const [updateMessage, setUpdateMessage] = useState('');
+  const [isNewVersionAvailable, setIsNewVersionAvailable] = useState(false);
+
   const isLoading = useAppStateStore((state) => state.isLoading); // ローディング中の状態
   const isLoggedIn = useAppStateStore((state) => state.isLoggedIn); // ログイン状態
   const systemMessage = useAppStateStore((state) => state.systemMessage); // システムメッセージ
@@ -32,6 +39,50 @@ export function HomePage() {
 
   //ツリーの状態を同期するカスタムフック
   const { deleteTree, handleCreateNewTree, handleListClick, handleFileUpload } = useTreeManagement();
+
+  // アプリバージョン情報の取得
+  useEffect(() => {
+    // 現在のアプリバージョンを取得
+    const fetchCurrentVersion = async () => {
+      const version = await getVersion();
+      setCurrentVersion(version);
+    };
+
+    // 最新バージョン情報を取得
+    const fetchLatestVersion = async () => {
+      try {
+        const response = await fetch('https://tasktree-s.web.app/version.json');
+        const data = await response.json();
+        console.log(data);
+        setLatestVersion(data.version);
+        setUpdateMessage(data.message);
+      } catch (error) {
+        setLatestVersion('※バージョン情報の取得に失敗しました。' + error);
+      }
+    };
+
+    fetchCurrentVersion();
+    fetchLatestVersion();
+  }, [isLoggedIn]);
+
+  // 新しいバージョンがあるかどうかを判定
+  useEffect(() => {
+    if (currentVersion && latestVersion) {
+      const currentVersionArray = currentVersion.split('.').map((v) => parseInt(v));
+      const latestVersionArray = latestVersion.split('.').map((v) => parseInt(v));
+      if (currentVersionArray[0] < latestVersionArray[0]) {
+        setIsNewVersionAvailable(true);
+      } else if (currentVersionArray[0] === latestVersionArray[0]) {
+        if (currentVersionArray[1] < latestVersionArray[1]) {
+          setIsNewVersionAvailable(true);
+        } else if (currentVersionArray[1] === latestVersionArray[1]) {
+          if (currentVersionArray[2] < latestVersionArray[2]) {
+            setIsNewVersionAvailable(true);
+          }
+        }
+      }
+    }
+  }, [currentVersion, latestVersion]);
 
   return (
     <>
@@ -71,7 +122,7 @@ export function HomePage() {
               ) : (
                 <Typography variant='h3'>
                   <img
-                    src='/src/assets/TaskTrees.svg'
+                    src='/TaskTrees.svg'
                     alt='Task Tree'
                     style={{ width: '35px', height: '35px', marginTop: '30px', marginRight: '10px' }}
                   />
@@ -94,11 +145,7 @@ export function HomePage() {
           // アカウント削除の確認ダイアログ
           <>
             <Typography sx={{ marginBottom: 0 }} variant='h3'>
-              <img
-                src='/src/assets/TaskTrees.svg'
-                alt='Task Tree'
-                style={{ width: '35px', height: '35px', marginRight: '10px' }}
-              />
+              <img src='/TaskTrees.svg' alt='Task Tree' style={{ width: '35px', height: '35px', marginRight: '10px' }} />
               TaskTrees
             </Typography>
             <Box sx={{ width: '100%', marginTop: -1, marginBottom: 4 }}>
@@ -127,7 +174,7 @@ export function HomePage() {
         // ログイン前の画面
         <>
           <Typography sx={{ marginBottom: 0 }} variant='h3'>
-            <img src='/src/assets/TaskTrees.svg' alt='Task Tree' style={{ width: '35px', height: '35px', marginRight: '10px' }} />
+            <img src='/TaskTrees.svg' alt='Task Tree' style={{ width: '35px', height: '35px', marginRight: '10px' }} />
             TaskTrees
           </Typography>
           <Box sx={{ width: '100%', marginTop: -1, marginBottom: 4 }}>
@@ -156,16 +203,39 @@ export function HomePage() {
 
           <Paper sx={{ maxWidth: 300, margin: 'auto', marginTop: 4 }}>
             <Typography variant='body2' sx={{ textAlign: 'left', p: 2 }} gutterBottom>
-              複数のツリー管理＆共同編集に対応した新バージョンです。
+              ver{currentVersion}
               <br />
               <br />
-              １ツリーのシンプルな個人用バージョンは<a href='https://tasktree-fb.web.app/'>こちら</a>。
-              ツリーデータは相互に移行可能です。
+              {isNewVersionAvailable ? (
+                <>
+                  {`最新バージョン: ${latestVersion} が利用可能です。`}
+                  <a href='https://tasktree-s.web.app/download' target='_blank' rel='noreferrer'>
+                    ダウンロード
+                  </a>
+                  <br />
+                  <br />
+                  <hr />
+                  {updateMessage}
+                </>
+              ) : (
+                <>
+                  最新バージョン: {latestVersion}
+                  <hr />
+                  お使いのバージョンは最新です。
+                  <br />
+                </>
+              )}
             </Typography>
           </Paper>
           <Typography variant='caption' sx={{ width: '100%', minWidth: '100%' }}>
-            <a href='mailto:app@bucketrelay.com'>©{new Date().getFullYear()} Jun Murakami</a> |{' '}
-            <a href='https://github.com/Jun-Murakami/TaskTrees'>GitHub</a> | <a href='/privacy-policy'>Privacy policy</a>
+            <a href='mailto:app@bucketrelay.com' target='_blank' rel='noreferrer'>
+              ©{new Date().getFullYear()} Jun Murakami
+            </a>{' '}
+            |{' '}
+            <a href='https://github.com/Jun-Murakami/TaskTrees' target='_blank' rel='noreferrer'>
+              GitHub
+            </a>{' '}
+            | <a href='/privacy-policy'>Privacy policy</a>
           </Typography>
           <Typography variant='caption' sx={{ width: '100%' }}></Typography>
         </>

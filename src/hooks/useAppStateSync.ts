@@ -5,7 +5,11 @@ import { getAuth } from 'firebase/auth';
 import { getDatabase, ref, onValue, set } from 'firebase/database';
 import { useAppStateStore } from '../store/appStateStore';
 import { useTreeStateStore } from '../store/treeStateStore';
+import { useDialogStore } from '../store/dialogStore';
 import { useError } from './useError';
+import { dialog, fs } from '@tauri-apps/api';
+import { invoke } from '@tauri-apps/api/tauri';
+
 
 export const useAppStateSync = () => {
   const [isLoadedFromExternal, setIsLoadedFromExternal] = useState(false);
@@ -19,8 +23,17 @@ export const useAppStateSync = () => {
   const items = useTreeStateStore((state) => state.items);
   const currentTreeName = useTreeStateStore((state) => state.currentTreeName);
 
+  const showDialog = useDialogStore((state) => state.showDialog);
+
   // エラーハンドリング
   const { handleError } = useError();
+
+  // ダークモードの変更を監視 ------------------------------------------------
+  useEffect(() => {
+    invoke("plugin:theme|set_theme", {
+      theme: darkMode ? "dark" : "light"
+    });
+  }, [darkMode]);
 
   // ダークモード、完了済みアイテムの非表示設定の監視 ------------------------------------------------
   useEffect(() => {
@@ -84,22 +97,25 @@ export const useAppStateSync = () => {
   }
 
   // アプリの状態をJSONファイルとしてダウンロードする
-  const handleDownloadAppState = () => {
+  const handleDownloadAppState = async () => {
     const appState = { items, hideDoneItems, darkMode, currentTreeName };
     const appStateJSON = JSON.stringify(appState, null, 2); // 読みやすい形式でJSONを整形
-    const blob = new Blob([appStateJSON], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    if (!currentTreeName) {
-      link.download = `TaskTree_Backup_${getCurrentDateTime()}.json`;
-    } else {
-      link.download = `TaskTree_${currentTreeName}_Backup_${getCurrentDateTime()}.json`;
+    const defaultPath: dialog.SaveDialogOptions = {
+      defaultPath: currentTreeName ? `TaskTree_${currentTreeName}_Backup_${getCurrentDateTime()}.json` : `TaskTree_Backup_${getCurrentDateTime()}.json`
+    };
+
+    try {
+      const filePath = await dialog.save(defaultPath);
+      if (filePath) {
+        await fs.writeFile({
+          path: filePath,
+          contents: appStateJSON,
+        });
+        await showDialog('ツリーを保存しました。', 'Information');
+      }
+    } catch (error) {
+      await showDialog('ツリーの保存に失敗しました。' + error, 'Error');
     }
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
   return { handleDownloadAppState };

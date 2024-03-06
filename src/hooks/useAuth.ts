@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut } from 'firebase/auth';
 import { getDatabase, remove, ref } from 'firebase/database';
 import { useAppStateStore } from '../store/appStateStore';
 import { useTreeStateStore } from '../store/treeStateStore';
@@ -48,7 +48,7 @@ export const useAuth = () => {
 
   // Googleログイン
   const handleLogin = () => {
-    signInWithPopup(auth, provider)
+    signInWithRedirect(auth, provider)
       .then(() => {
         setIsLoggedIn(true);
         setSystemMessage(null);
