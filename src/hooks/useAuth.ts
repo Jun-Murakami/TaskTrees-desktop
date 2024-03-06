@@ -88,6 +88,7 @@ export const useAuth = () => {
         const errorCode = error.code;
         const errorMessage = error.message;
         console.error(errorCode, errorMessage);
+        setSystemMessage('ログイン中にエラーが発生しました。ErroCode:' + errorCode + ' ' + errorMessage);
       });
   };
 
