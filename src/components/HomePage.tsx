@@ -6,7 +6,8 @@ import { useAuth } from '../hooks/useAuth';
 import { ModalDialog } from '../components/ModalDialog';
 import { InputDialog } from '../components/InputDialog';
 import { ResponsiveDrawer } from './ResponsiveDrawer';
-import { Button, CircularProgress, Typography, Paper, Box } from '@mui/material';
+import { Button, CircularProgress, Typography, Paper, Box, TextField, Stack } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { TreeSettingsAccordion } from './TreeSettingsAccordion';
 import { SortableTree } from './SortableTree/SortableTree';
@@ -20,6 +21,8 @@ export function HomePage() {
   const [latestVersion, setLatestVersion] = useState('');
   const [updateMessage, setUpdateMessage] = useState('');
   const [isNewVersionAvailable, setIsNewVersionAvailable] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const isLoading = useAppStateStore((state) => state.isLoading); // ローディング中の状態
   const isLoggedIn = useAppStateStore((state) => state.isLoggedIn); // ログイン状態
@@ -32,13 +35,15 @@ export function HomePage() {
   const isInputDialogVisible = useInputDialogStore((state: { isDialogVisible: boolean }) => state.isDialogVisible);
 
   // 認証状態の監視とログイン、ログアウトを行うカスタムフック
-  const { handleLogin, handleLogout, handleDeleteAccount } = useAuth();
+  const { handleSignup, handleLogin, handleLogout, handleDeleteAccount, handleResetPassword } = useAuth();
 
   // アプリの状態の読み込みと保存を行うカスタムフック
   const { handleDownloadAppState } = useAppStateSync();
 
   //ツリーの状態を同期するカスタムフック
   const { deleteTree, handleCreateNewTree, handleListClick, handleFileUpload } = useTreeManagement();
+
+  const theme = useTheme();
 
   // アプリバージョン情報の取得
   useEffect(() => {
@@ -113,7 +118,8 @@ export function HomePage() {
                     sx={{
                       maxWidth: '900px', // 最大幅を指定
                       width: '100%', // 横幅いっぱいに広がる
-                      margin: '0 auto', // 中央寄せ
+                      marginX: 'auto', // 中央寄せ
+                      mb: 6,
                     }}
                   >
                     <SortableTree collapsible indicator removable />
@@ -150,7 +156,7 @@ export function HomePage() {
             </Typography>
             <Box sx={{ width: '100%', marginTop: -1, marginBottom: 4 }}>
               <Typography variant='caption' sx={{ width: '100%' }}>
-                Team Edition
+                Desktop
               </Typography>
             </Box>
             <Typography variant='body2' sx={{ marginY: 4 }}>
@@ -191,17 +197,50 @@ export function HomePage() {
               }}
             />
           ) : (
-            <Button onClick={() => handleLogin()} variant={'contained'}>
-              Googleでログイン
-            </Button>
+            <Stack spacing={3} sx={{ width: 400, marginX: 'auto' }}>
+              <TextField
+                label='メールアドレス'
+                variant='outlined'
+                margin='normal'
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+              <TextField
+                label='パスワード'
+                variant='outlined'
+                margin='normal'
+                type='password'
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <Button onClick={() => handleLogin(email, password)} variant={'contained'}>
+                ログイン
+              </Button>
+              <Button onClick={() => handleSignup(email, password)} variant={'outlined'} size='small'>
+                サインアップ
+              </Button>
+              <Button onClick={() => handleResetPassword(email)} variant={'outlined'} size='small'>
+                パスワードをリセット
+              </Button>
+              <Typography variant='caption' sx={{ marginY: 4 }}>
+                <a href='https://tasktree-s.web.app' target='_blank'>
+                  Webアプリ版
+                </a>
+                を先にご利用の方は、最初にメールアドレスを入力して
+                <br />
+                パスワードをリセットしてください。
+                <br />
+                ※ツリーデータはデスクトップ版とWebアプリ版で共有されます。
+              </Typography>
+            </Stack>
           )}
           {systemMessage && (
-            <Typography variant='body2' sx={{ marginY: 4 }}>
+            <Typography variant='body2' sx={{ marginY: 4, color: theme.palette.primary.main }}>
               {systemMessage}
             </Typography>
           )}
 
-          <Paper sx={{ maxWidth: 300, margin: 'auto', marginTop: 4 }}>
+          <Paper sx={{ maxWidth: 400, margin: 'auto', marginTop: 4 }}>
             <Typography variant='body2' sx={{ textAlign: 'left', p: 2 }} gutterBottom>
               ver{currentVersion}
               <br />
@@ -209,6 +248,7 @@ export function HomePage() {
               {isNewVersionAvailable ? (
                 <>
                   {`最新バージョン: ${latestVersion} が利用可能です。`}
+                  <br />
                   <a href='https://tasktree-s.web.app/download' target='_blank' rel='noreferrer'>
                     ダウンロード
                   </a>

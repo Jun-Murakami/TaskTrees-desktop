@@ -63,7 +63,6 @@ fn main() {
           
           Ok(())
         })
-        .plugin(tauri_plugin_oauth::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
